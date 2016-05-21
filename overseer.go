@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/jpillora/overseer/fetcher"
+	"github.com/admpub/overseer/fetcher"
 )
 
 const (

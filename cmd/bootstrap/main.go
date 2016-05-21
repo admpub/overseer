@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jpillora/overseer"
-	"github.com/jpillora/overseer/fetcher"
+	"github.com/admpub/overseer"
+	"github.com/admpub/overseer/fetcher"
 	"github.com/jpillora/opts"
 )
 
