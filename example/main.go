@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"runtime"
 	"time"
 
 	"github.com/admpub/overseer"
@@ -29,11 +30,15 @@ func prog(state overseer.State) {
 //then create another 'main' which runs the upgrades
 //'main()' is run in the initial process
 func main() {
+	ext := ``
+	if runtime.GOOS == `windows` {
+		ext = `.exe`
+	}
 	overseer.Run(overseer.Config{
 		Program: prog,
 		Address: ":5001",
 		Fetcher: &fetcher.HTTP{
-			URL:      "http://localhost:5002/myappnew",
+			URL:      "http://localhost:5002/myappnew" + ext,
 			Interval: 1 * time.Second,
 		},
 		Debug: false, //display log of overseer actions
