@@ -1,4 +1,5 @@
-// Daemonizable self-upgrading binaries in Go (golang).
+// Package overseer implements daemonizable
+// self-upgrading binaries in Go (golang).
 package overseer
 
 import (
@@ -22,6 +23,7 @@ const (
 	envBinCheckLegacy = "GO_UPGRADE_BIN_CHECK"
 )
 
+// Config defines overseer's run-time configuration
 type Config struct {
 	//Required will prevent overseer from fallback to running
 	//running the program in the main process on failure.
@@ -42,7 +44,7 @@ type Config struct {
 	//This helps to prevent unwieldy fetch.Interfaces from hogging
 	//too many resources. Defaults to 1 second.
 	MinFetchInterval time.Duration
-	//PreUpgrade runs after a binary has been retreived, user defined checks
+	//PreUpgrade runs after a binary has been retrieved, user defined checks
 	//can be run here and returning an error will cancel the upgrade.
 	PreUpgrade func(tempBinaryPath string) error
 	//Debug enables all [overseer] logs.
@@ -91,7 +93,7 @@ func RunErr(c Config) error {
 }
 
 //Run executes overseer, if an error is
-//encounted, overseer fallsback to running
+//encountered, overseer fallsback to running
 //the program directly (unless Required is set).
 func Run(c Config) {
 	err := runErr(&c)
@@ -107,28 +109,49 @@ func Run(c Config) {
 	os.Exit(0)
 }
 
+//sanityCheck returns true if a check was performed
+func sanityCheck() bool {
+	//sanity check
+	if token := os.Getenv(envBinCheck); token != "" {
+		fmt.Fprint(os.Stdout, token)
+		return true
+	}
+	//legacy sanity check using old env var
+	if token := os.Getenv(envBinCheckLegacy); token != "" {
+		fmt.Fprint(os.Stdout, token)
+		return true
+	}
+	return false
+}
+
+//SanityCheck manually runs the check to ensure this binary
+//is compatible with overseer. This tries to ensure that a restart
+//is never performed against a bad binary, as it would require
+//manual intervention to rectify. This is automatically done
+//on overseer.Run() though it can be manually run prior whenever
+//necessary.
+func SanityCheck() {
+	if sanityCheck() {
+		os.Exit(0)
+	}
+}
+
+//abstraction over master/slave
 var currentProcess interface {
 	triggerRestart()
 	run() error
 }
 
 func runErr(c *Config) error {
-	if err := validate(c); err != nil {
-		return err
-	}
-	//sanity check
-	if token := os.Getenv(envBinCheck); token != "" {
-		fmt.Fprint(os.Stdout, token)
-		return nil
-	}
-	//legacy sanity check using old env var
-	if token := os.Getenv(envBinCheckLegacy); token != "" {
-		fmt.Fprint(os.Stdout, token)
-		return nil
-	}
 	//os not supported
 	if !supported {
 		return fmt.Errorf("os (%s) not supported", runtime.GOOS)
+	}
+	if err := validate(c); err != nil {
+		return err
+	}
+	if sanityCheck() {
+		return nil
 	}
 	//run either in master or slave mode
 	if os.Getenv(envIsSlave) == "1" {
