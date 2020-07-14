@@ -17,8 +17,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"github.com/kardianos/osext"
 )
 
 var tmpBinPath = filepath.Join(os.TempDir(), "overseer-"+token())
@@ -67,7 +65,7 @@ func (mp *master) run() error {
 
 func (mp *master) checkBinary() error {
 	//get path to binary and confirm its writable
-	binPath, err := osext.Executable()
+	binPath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to find binary path (%s)", err)
 	}
@@ -118,7 +116,7 @@ func (mp *master) setupSignalling() {
 func (mp *master) handleSignal(s os.Signal) {
 	if s == mp.RestartSignal {
 		//user initiated manual restart
-		mp.triggerRestart()
+		go mp.triggerRestart()
 	} else if s.String() == "child exited" {
 		// will occur on every restart, ignore it
 	} else
@@ -294,7 +292,7 @@ func (mp *master) fetch() {
 		return
 	}
 	//overwrite!
-	if err := move(mp.binPath, tmpBinPath); err != nil {
+	if err := overwrite(mp.binPath, tmpBinPath); err != nil {
 		mp.warnf("failed to overwrite binary: %s", err)
 		return
 	}
